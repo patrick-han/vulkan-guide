@@ -35,6 +35,10 @@ public:
 	VkCommandPool _commandPool;
 	VkCommandBuffer _mainCommandBuffer;
 
+	// Renderpass and framebuffer structures
+	VkRenderPass _renderpass;
+	std::vector<VkFramebuffer> _framebuffers;
+
 
 	// Initializes everything in the engine
 	void init();
@@ -56,4 +60,10 @@ public:
 
 	// Initialize command structures
 	void init_commands();
+
+	// Initialize renderpass
+	void init_default_renderpass();
+
+	// Initialize framebuffers
+	void init_framebuffers();
 };

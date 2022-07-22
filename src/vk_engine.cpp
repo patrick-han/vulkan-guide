@@ -44,6 +44,8 @@ void VulkanEngine::init()
 	init_vulkan();
 	init_swapchain();
 	init_commands();
+	init_default_renderpass();
+	init_framebuffers();
 	
 	//everything went fine
 	_isInitialized = true;
@@ -158,4 +160,39 @@ void VulkanEngine::init_commands()
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
 
 	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+}
+
+void VulkanEngine::init_default_renderpass()
+{
+	// Create a color attachment which describes the image we will be writing into using
+	// rendering commands
+	VkAttachmentDescription color_attachment = {};
+	color_attachment.format = _swapchainImageFormat; // Compatible format with swapchain
+	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // No MSAA
+	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // We Clear when this attachment is loaded
+	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the renderpass is over
+	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // Don't care about stencil
+	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know/care about the starting layout of the attachment
+	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After renderpass ends, image has to be in a layout ready for display
+
+	VkAttachmentReference color_attachment_ref = {};
+	color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent renderpass itself
+	color_attachment_ref.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+	// Create 1 subpass (minimum)
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment_ref;
+
+	// Create renderpass
+	VkRenderPassCreateInfo render_pass_info = {};
+	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	render_pass_info.attachmentCount = 1; 
+	render_pass_info.pAttachments = &color_attachment; // Connect the color attachment to the info
+	render_pass_info.subpassCount = 1;
+	render_pass_info.pSubpasses = &subpass; // Connect subpass to the info
+
+	VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderpass));
 }
