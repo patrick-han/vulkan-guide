@@ -29,6 +29,12 @@ public:
 	std::vector<VkImage> _swapchainImages;
 	std::vector<VkImageView> _swapchainImageViews;
 
+	// Queue and command pool/buffer structures
+	VkQueue _graphicsQueue;
+	uint32_t _graphicsQueueFamily;
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+
 
 	// Initializes everything in the engine
 	void init();
@@ -47,4 +53,7 @@ public:
 
 	// Initialize swapchain structures
 	void init_swapchain();
+
+	// Initialize command structures
+	void init_commands();
 };
