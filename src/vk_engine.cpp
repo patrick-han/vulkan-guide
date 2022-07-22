@@ -56,10 +56,12 @@ void VulkanEngine::cleanup()
 	if (_isInitialized) {
 		vkDestroyCommandPool(_device, _commandPool, nullptr);
 		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-
+		vkDestroyRenderPass(_device, _renderpass, nullptr);
 		// Destroy swapchain resources
 		for (int i = 0; i < _swapchainImageViews.size(); i++)
 		{
+			vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
+
 			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
 		}
 
@@ -189,10 +191,35 @@ void VulkanEngine::init_default_renderpass()
 	// Create renderpass
 	VkRenderPassCreateInfo render_pass_info = {};
 	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	render_pass_info.pNext = nullptr;
 	render_pass_info.attachmentCount = 1; 
 	render_pass_info.pAttachments = &color_attachment; // Connect the color attachment to the info
 	render_pass_info.subpassCount = 1;
 	render_pass_info.pSubpasses = &subpass; // Connect subpass to the info
 
 	VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderpass));
+}
+
+void VulkanEngine::init_framebuffers()
+{
+	// Create the framebuffers for the swapchain images, connecting the renderpass
+	// to the images for rendering
+	VkFramebufferCreateInfo fb_info = {};
+	fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	fb_info.pNext = nullptr;
+	fb_info.renderPass = _renderpass;
+	fb_info.attachmentCount = 1;
+	fb_info.width = _windowExtent.width;
+	fb_info.height = _windowExtent.height;
+	fb_info.layers = 1;
+
+	// Grab how many images we have in the swapchain and create framebuffers for each
+	// of the swapchain image views
+	const uint32_t swapchain_imagecount = _swapchainImages.size();
+	_framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+	for (int i = 0; i < swapchain_imagecount; i++)
+	{
+		fb_info.pAttachments = &_swapchainImageViews[i];
+		VK_CHECK(vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]));
+	}
 }
