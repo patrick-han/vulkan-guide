@@ -49,8 +49,21 @@ void VulkanEngine::init()
 }
 void VulkanEngine::cleanup()
 {	
+	// We tend to destroy things in the reverse order of which they were created
 	if (_isInitialized) {
-		
+		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+
+		// Destroy swapchain resources
+		for (int i = 0; i < _swapchainImageViews.size(); i++)
+		{
+			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
+		}
+
+		vkDestroyDevice(_device, nullptr);
+		vkDestroySurfaceKHR(_instance, _surface, nullptr);
+		vkb::destroy_debug_utils_messenger(_instance, _debug_messenger);
+		vkDestroyInstance(_instance, nullptr);
+
 		SDL_DestroyWindow(_window);
 	}
 }
@@ -117,7 +130,12 @@ void VulkanEngine::init_swapchain()
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
 		.use_default_format_selection()
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // vsync
-		.set_desired_extent(_windowExtent.width, _windowExtent.height)
+		.set_desired_extent(_windowExtent.width, _windowExtent.height) // If we resize the window, need to rebuild swapchain
 		.build()
 		.value();
+
+	_swapchain = vkbSwapchain.swapchain;
+	_swapchainImageFormat = vkbSwapchain.image_format;
+	_swapchainImages = vkbSwapchain.get_images().value();
+	_swapchainImageViews = vkbSwapchain.get_image_views().value();
 }

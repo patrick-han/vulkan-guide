@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vk_types.h>
+#include <vector>
 
 class VulkanEngine {
 public:
